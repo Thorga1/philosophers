@@ -6,8 +6,25 @@
 /*   By: thorgal <thorgal@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/29 17:36:25 by thorgal           #+#    #+#             */
-/*   Updated: 2025/01/29 17:42:40 by thorgal          ###   ########.fr       */
+/*   Updated: 2025/01/30 15:20:17 by thorgal          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+
+int		ft_atoi(const char *str)
+{
+	int		i;
+	long	res;
+
+	i = 0;
+	res = 0;
+	while (str[i] >= '0' && str[i] <= '9')
+	{
+		res = res * 10 + (str[i] - 0);
+		if (res > 2147483647)
+			return (-1);
+		i++;
+	}
+	return ((int)res);
+}
