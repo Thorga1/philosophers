@@ -6,7 +6,7 @@
 #    By: thorgal <thorgal@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/29 17:32:15 by thorgal           #+#    #+#              #
-#    Updated: 2025/01/29 17:39:23 by thorgal          ###   ########.fr        #
+#    Updated: 2025/04/01 17:48:28 by thorgal          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ NAME = philo
 
 CC = cc
 
-CFLAGS = -Wall -Wextra -Werror -pthread -Iincludes
+CFLAGS = -Wall -Wextra -Werror -pthread -Iincludes -g3
 
 SRCDIR = src
 
@@ -24,6 +24,8 @@ INCDIR = includes
 
 SRCS = $(SRCDIR)/main.c \
        $(SRCDIR)/utils.c \
+       $(SRCDIR)/simulation.c \
+       $(SRCDIR)/routine.c \
 
 OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
