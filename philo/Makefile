@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: thorgal <thorgal@student.42.fr>            +#+  +:+       +#+         #
+#    By: tordner <tordner@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/29 17:32:15 by thorgal           #+#    #+#              #
-#    Updated: 2025/04/01 17:48:28 by thorgal          ###   ########.fr        #
+#    Updated: 2025/05/13 13:23:05 by tordner          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,10 +22,11 @@ OBJDIR = obj
 
 INCDIR = includes
 
-SRCS = $(SRCDIR)/main.c \
-       $(SRCDIR)/utils.c \
-       $(SRCDIR)/simulation.c \
-       $(SRCDIR)/routine.c \
+SRCS =	$(SRCDIR)/main.c \
+		$(SRCDIR)/utils.c \
+		$(SRCDIR)/table.c \
+		$(SRCDIR)/routine.c \
+		$(SRCDIR)/time.c \
 
 OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 

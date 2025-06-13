@@ -3,141 +3,112 @@
 /*                                                        :::      ::::::::   */
 /*   routine.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: thorgal <thorgal@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tordner <tordner@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/25 18:56:33 by thorgal           #+#    #+#             */
-/*   Updated: 2025/04/01 18:05:41 by thorgal          ###   ########.fr       */
+/*   Created: 2025/05/12 13:36:21 by tordner           #+#    #+#             */
+/*   Updated: 2025/05/13 14:56:51 by tordner          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/philo.h"
-
-static int check_meal_completion(t_simulation *sim)
-{
-    int i;
-
-	if (sim->data.num_times_must_eat == -1)
-		return (0);
-	i = 0;
-	while (i < sim->data.num_philosophers)
-	{
-		if (sim->philosophers[i].meals_eaten < sim->data.num_times_must_eat)
-			return (0);
-		i++;
-	}
-	return (1);
-}
+#include "philo.h"
 
 static void *monitor_routine(void *arg)
 {
-	t_simulation	*sim;
-	int				i;
-	long			time_since_meal;
+	t_data	*data;
+	int		i;
+	long	time_since_meal;
 
-	sim = (t_simulation *)arg;
+	data = (t_data *)arg;
 	while (1)
 	{
-		usleep(1000);
+		precise_usleep(1000);
 		i = -1;
-		while (++i < sim->data.num_philosophers)
+		while (++i < data->num_philosophers)
 		{
-			// Check starvation
-			time_since_meal = get_current_time() - sim->philosophers[i].last_meal_time;
-			if (time_since_meal > sim->data.time_to_die)
+			time_since_meal = get_time_ms() - data->philos[i].last_meal_time;
+			if (time_since_meal > data->time_to_die)
 			{
-				log_state(sim->philosophers[i].id, "died");
-				exit(0);  // Terminate the entire program
+				log_state(&data->philos[i], data->philos[i].id, "died");
+				
 			}
-			if (check_meal_completion(sim))
-			{
-				log_state(0, "All philosophers ate enough");
-				exit(0);
-			}
+			// if (check_meal_completion(sim))
+			// {
+			// 	log_state(0, "All philosophers ate enough");
+			// 	exit(0);
+			// }
 		}
 	}
-
 	return (NULL);
 }
 
 static void	handle_single_philosopher(t_philosopher *philo)
 {
 	pthread_mutex_lock(philo->left_fork);
-	log_state(philo->id, "has taken a fork");
-	usleep(philo->data->time_to_die * 1000);
-	log_state(philo->id, "died");
+	log_state(philo, philo->id, "has taken a fork");
+	pthread_mutex_unlock(philo->left_fork);
+	precise_usleep(philo->data->time_to_die * 1000);
+	log_state(philo, philo->id, "died");
 	return ;
 }
 
-void	*philosopher_routine(void *arg)
+void	*philo_routine(void *arg)
 {
 	t_philosopher	*philo;
-	t_data			*data;
-	pthread_mutex_t	*first_fork;
-	pthread_mutex_t	*second_fork;
 
 	philo = (t_philosopher *)arg;
-	first_fork = philo->left_fork;
-	second_fork = philo->right_fork;
-	data = philo->data;
+	while (get_time_ms() < philo->data->start_time)
+		precise_usleep(10);
 	if (philo->data->num_philosophers == 1)
 	{
 		handle_single_philosopher(philo);
 		return (NULL);
 	}
+	if (philo->id % 2 == 1)
+		precise_usleep((philo->data->time_to_eat * 1000) / 2);
 	while (1)
 	{
-		log_state(philo->id, "is thinking");
-		usleep(data->time_to_eat * 1000);
-
-		if (philo->id % 2 == 0)
-		{
-			first_fork = philo->right_fork;
-			second_fork = philo->left_fork;
-		}
-		pthread_mutex_lock(first_fork);
-		log_state(philo->id, "has taken a fork");
-		pthread_mutex_lock(second_fork);
-		log_state(philo->id, "has taken a fork");
-
-		log_state(philo->id, "is eating");
-		philo->last_meal_time = get_current_time();
-		philo->meals_eaten++;
-		usleep(data->time_to_eat * 1000);
-
+		log_state(philo, philo->id, "is thinking");
+		precise_usleep(100);
+		pthread_mutex_lock(philo->left_fork);
+		log_state(philo, philo->id, "has taken a fork");
+		pthread_mutex_lock(philo->right_fork);
+		log_state(philo, philo->id, "has taken a fork");
+		log_state(philo, philo->id, "is eating");
+		precise_usleep(philo->data->time_to_eat * 1000);
 		pthread_mutex_unlock(philo->left_fork);
 		pthread_mutex_unlock(philo->right_fork);
 
-		log_state(philo->id, "is sleeping");
-		usleep(data->time_to_sleep * 1000);
+		pthread_mutex_lock(philo->data->meal_time);
+		philo->last_meal_time = get_time_ms();
+		pthread_mutex_unlock(philo->data->meal_time);
+		philo->meals_eaten++;
+
+		log_state(philo, philo->id, "is sleeping");
+		precise_usleep(philo->data->time_to_sleep * 1000);
 	}
 	return (NULL);
 }
 
-int	start_simulation(t_simulation *sim)
+int	start_table(t_data *data)
 {
-    pthread_t monitor;
-    int i;
+	pthread_t	monitor;
+	int	i;
 
-    i = 0;
-    while (i < sim->data.num_philosophers)
+	i = 0;
+	data->start_time = get_time_ms() + 300;
+	while (i < data->num_philosophers)
 	{
-        sim->philosophers[i].last_meal_time = get_current_time();
+		if (pthread_create(&data->philos[i].thread, NULL, philo_routine, &data->philos[i]) != 0)
+			return (1);
 		i++;
 	}
-    i = 0;
-    while (i < sim->data.num_philosophers) {
-        if (pthread_create(&sim->philosophers[i].thread, NULL, 
-                          philosopher_routine, &sim->philosophers[i]) != 0) {
-            printf("Error: Thread creation failed.\n");
-            return (1);
-        }
-		pthread_detach(sim->philosophers[i].thread);
+	if (pthread_create(&monitor, NULL, monitor_routine, data) != 0)
+		return (1);
+	i = 0;
+	while (i < data->num_philosophers)
+	{
+		pthread_join(data->philos[i].thread, NULL);
 		i++;
-    }
-    if (pthread_create(&monitor, NULL, monitor_routine, sim) != 0) {
-        printf("Error: Monitor thread creation failed.\n");
-        return (1);
-    }
-    pthread_join(monitor, NULL);
-    return (0);
+	}
+	return (0);
 }

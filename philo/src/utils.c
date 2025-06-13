@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: thorgal <thorgal@student.42.fr>            +#+  +:+       +#+        */
+/*   By: tordner <tordner@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/29 17:36:25 by thorgal           #+#    #+#             */
-/*   Updated: 2025/04/01 17:58:15 by thorgal          ###   ########.fr       */
+/*   Updated: 2025/05/13 14:50:22 by tordner          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,14 +57,38 @@ int	parse_arguments(t_data *data, int ac, char **av)
 	return (0);
 }
 
-long	get_current_time(void)
+void	cleanup_simulation(t_data *data)
 {
-	struct	timeval	tv;
-	gettimeofday(&tv, NULL);
-	return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+	int	i;
+
+	i = 0;
+	if (data->philos)
+		free(data->philos);
+	if (data->forks)
+	{
+		while (i < data->num_philosophers)
+		{
+			pthread_mutex_destroy(&data->forks[i]);
+			i++;
+		}
+		free(data->forks);
+	}
+	if (data->write)
+		pthread_mutex_destroy(data->write);
+	if (data->death)
+		pthread_mutex_destroy(data->death);
+	if (data->meal_time)
+		pthread_mutex_destroy(data->meal_time);
+	free(data->meal_time);
+	free(data->death);
+	free(data->write);
+	free(data);
+	return ;
 }
 
-void	log_state(int id, const char *state)
+void	log_state(t_philosopher *philo, int id, const char *state)
 {
-	printf("%ld %d %s\n", get_current_time(), id, state);
+	pthread_mutex_lock(philo->data->write);
+	printf("%ld %d %s\n", get_time_ms() - philo->data->start_time, id, state);
+	pthread_mutex_unlock(philo->data->write);
 }
